@@ -16,6 +16,7 @@ interface SearchBarProps {
 export function SearchBar({
   initialQuery = "",
   placeholder = "Search articles with vector similarity...",
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   showTrending = true,
   className = "",
   onSearch,

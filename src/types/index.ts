@@ -19,7 +19,7 @@ export interface RSSItem {
   contentSnippet?: string;
   link: string;
   guid: string;
-  pubDate: string | Date;
+  pubDate: Date;
   author?: string;
   categories?: string[];
   media?: {

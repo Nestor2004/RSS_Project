@@ -12,7 +12,13 @@ import { cn } from "@/lib/utils";
 interface SearchResult {
   id: string;
   score: number;
-  document: any;
+  document: {
+    title: string;
+    feed: {
+      title: string;
+    };
+    pubDate: string;
+  };
 }
 
 interface SimilarityVisualizationProps {
@@ -22,7 +28,6 @@ interface SimilarityVisualizationProps {
 
 export function SimilarityVisualization({
   results,
-  query,
 }: SimilarityVisualizationProps) {
   const [activeTab, setActiveTab] = useState("distribution");
 

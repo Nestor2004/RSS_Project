@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db/mongodb";
 import { ApiResponse } from "@/types";
+import { Article } from "@/models/Article";
+import { Feed } from "@/models/Feed";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     await connectToDatabase();
 
-    // Import models
-    const Article = require("@/lib/db/models/article").default;
-    const Feed = require("@/models/Feed").Feed;
+    // Models are imported at the top
 
     // Get sources with article counts
     const sources = await Feed.aggregate([

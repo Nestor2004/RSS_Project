@@ -5,10 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   // Extract the article ID from the URL
-  const id = params.id;
+  const { id } = await params;
 
   // Build the new URL with all the same search parameters
   const newUrl = new URL(`/api/articles/similar/${id}`, request.url);

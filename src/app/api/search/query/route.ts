@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCollection } from "@/lib/db/chromadb";
-import { VectorSearch, VectorSearchConfig } from "@/lib/vector-search";
+import {
+  VectorSearch,
+  VectorSearchConfig,
+  VectorSearchResult,
+} from "@/lib/vector-search";
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -50,7 +54,10 @@ export async function GET(request: NextRequest) {
     const results = await vectorSearch.searchByText(query, config);
 
     // Return results
-    const response: ApiResponse<{ results: any[]; query: string }> = {
+    const response: ApiResponse<{
+      results: VectorSearchResult[];
+      query: string;
+    }> = {
       success: true,
       data: {
         results,
@@ -59,13 +66,16 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(response);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in search query API:", error);
 
     const response: ApiResponse<null> = {
       success: false,
       error: {
-        message: error.message || "An error occurred during search",
+        message:
+          error instanceof Error
+            ? error.message
+            : "An error occurred during search",
         code: "SEARCH_ERROR",
       },
     };
@@ -101,7 +111,10 @@ export async function POST(request: NextRequest) {
     const results = await vectorSearch.searchByText(query, config);
 
     // Return results
-    const response: ApiResponse<{ results: any[]; query: string }> = {
+    const response: ApiResponse<{
+      results: VectorSearchResult[];
+      query: string;
+    }> = {
       success: true,
       data: {
         results,
@@ -110,13 +123,16 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in search query API:", error);
 
     const response: ApiResponse<null> = {
       success: false,
       error: {
-        message: error.message || "An error occurred during search",
+        message:
+          error instanceof Error
+            ? error.message
+            : "An error occurred during search",
         code: "SEARCH_ERROR",
       },
     };

@@ -84,7 +84,7 @@ class CustomEmbeddingFunction {
 /**
  * Get the embedding function for ChromaDB
  */
-async function getEmbeddingFunction(): Promise<any> {
+async function getEmbeddingFunction(): Promise<CustomEmbeddingFunction> {
   return new CustomEmbeddingFunction();
 }
 
@@ -157,7 +157,11 @@ export async function getCollection(
     // Get embedding function
     const embedFunc = await getEmbeddingFunction();
 
-    if (existingCollections.some((col: any) => col.name === collectionName)) {
+    if (
+      existingCollections.some(
+        (col: { name: string }) => col.name === collectionName
+      )
+    ) {
       // Get existing collection
       collections[collectionName] = await client.getCollection({
         name: collectionName,

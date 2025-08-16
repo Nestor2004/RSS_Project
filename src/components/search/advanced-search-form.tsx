@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/select";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 interface Source {
@@ -44,7 +43,7 @@ interface Category {
 }
 
 interface AdvancedSearchFormProps {
-  onSearch: (query: string, filters: any) => void;
+  onSearch: (query: string, filters: Record<string, unknown>) => void;
   isSearching?: boolean;
   className?: string;
 }
@@ -54,7 +53,6 @@ export function AdvancedSearchForm({
   isSearching = false,
   className,
 }: AdvancedSearchFormProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Form state
@@ -120,7 +118,7 @@ export function AdvancedSearchForm({
     if (!query.trim()) return;
 
     // Build filters
-    const filters: any = {};
+    const filters: Record<string, unknown> = {};
 
     if (source) filters.source = source;
     if (category) filters.category = category;

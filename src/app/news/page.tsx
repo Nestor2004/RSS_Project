@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -22,15 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  ExternalLink,
-  Clock,
-  ChevronDown,
-  ChevronUp,
-  RefreshCw,
-  BarChart4,
-  Loader2,
-} from "lucide-react";
+import { ExternalLink, Clock, RefreshCw, BarChart4 } from "lucide-react";
 import { SimilarNews } from "@/components/news/similar-news";
 import { SearchBar } from "@/components/search/search-bar";
 import { NewsFilters } from "@/components/news/news-filters";
@@ -74,7 +66,6 @@ function NewsCard({
   searchScore?: number;
 }) {
   const [showSimilar, setShowSimilar] = useState(false);
-  const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   // Format publication date
   const formattedDate = article?.pubDate
@@ -142,15 +133,7 @@ function NewsCard({
               size="sm"
               className="h-7 px-2"
               onClick={handleToggleSimilar}
-              disabled={loadingSimilar && !showSimilar}
             >
-              {loadingSimilar ? (
-                <Loader2 className="h-3 w-3 animate-spin mr-1" />
-              ) : showSimilar ? (
-                <ChevronUp className="h-3 w-3 mr-1" />
-              ) : (
-                <ChevronDown className="h-3 w-3 mr-1" />
-              )}
               Similar
             </Button>
           )}
@@ -178,9 +161,9 @@ function NewsCard({
 }
 
 /**
- * News Page Component
+ * News Content Component - Wrapped in Suspense
  */
-export default function NewsPage() {
+function NewsContent() {
   // States
   const [articles, setArticles] = useState<Article[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -372,12 +355,7 @@ export default function NewsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-8 flex justify-center">
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            isSearching={isSearching}
-            searchQuery={searchQuery}
-          />
+          <Pagination currentPage={page} totalPages={totalPages} />
         </div>
       )}
 
@@ -428,8 +406,8 @@ export default function NewsPage() {
               </li>
               <li>
                 <span className="font-medium">Similar Articles:</span> The
-                "Similar" feature uses the same technology to find articles with
-                related content.
+                &quot;Similar&quot; feature uses the same technology to find
+                articles with related content.
               </li>
             </ol>
 
@@ -441,5 +419,16 @@ export default function NewsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/**
+ * News Page Component
+ */
+export default function NewsPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading news...</div>}>
+      <NewsContent />
+    </Suspense>
   );
 }

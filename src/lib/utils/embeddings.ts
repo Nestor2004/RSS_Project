@@ -120,7 +120,10 @@ export async function getEmbedder() {
  * Create an OpenAI-based embedder
  */
 function createOpenAIEmbedder(): Embedder {
-  return async (text: string, options: any) => {
+  return async (
+    text: string,
+    options: { pooling: string; normalize: boolean }
+  ) => {
     try {
       const response = await axios.post(
         "https://api.openai.com/v1/embeddings",
@@ -155,7 +158,10 @@ function createOpenAIEmbedder(): Embedder {
  * Create a fallback embedder that generates deterministic vectors
  */
 function createFallbackEmbedder(): Embedder {
-  return async (text: string, options: any) => {
+  return async (
+    text: string,
+    options: { pooling: string; normalize: boolean }
+  ) => {
     // Create a deterministic hash-based embedding
     let seedValue = Array.from(text.toLowerCase()).reduce(
       (acc, char) => acc + char.charCodeAt(0),

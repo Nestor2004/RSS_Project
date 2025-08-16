@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db/mongodb";
-import Article from "@/lib/db/models/article";
+import { Article } from "@/models/Article";
 import { ApiResponse } from "@/types";
 
 export async function GET(req: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     await connectToDatabase();
 
     // Build query
-    const query: Record<string, any> = {};
+    const query: Record<string, unknown> = {};
 
     // Add source filter if provided
     if (source) {
@@ -27,10 +27,10 @@ export async function GET(req: NextRequest) {
     if (dateFrom || dateTo) {
       query.pubDate = {};
       if (dateFrom) {
-        query.pubDate.$gte = new Date(dateFrom);
+        (query.pubDate as Record<string, unknown>).$gte = new Date(dateFrom);
       }
       if (dateTo) {
-        query.pubDate.$lte = new Date(dateTo);
+        (query.pubDate as Record<string, unknown>).$lte = new Date(dateTo);
       }
     }
 

@@ -7,16 +7,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
-  isSearching: boolean;
-  searchQuery: string;
 }
 
-export function Pagination({
-  currentPage,
-  totalPages,
-  isSearching,
-  searchQuery,
-}: PaginationProps) {
+export function Pagination({ currentPage, totalPages }: PaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 

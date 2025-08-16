@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { processAllFeeds } from "@/lib/news-processor";
-import { ApiResponse, ProcessingStats } from "@/types";
+import { ApiResponse } from "@/types";
 
 // POST /api/rss/process - trigger news processing
 export async function POST(): Promise<NextResponse> {

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db/mongodb";
 import { getCollection } from "@/lib/db/chromadb";
-import { Article } from "@/models/Article";
+import { Article, IArticle } from "@/models/Article";
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const id = (await params).id;
+  const { id } = await params;
 
   const searchParams = request.nextUrl.searchParams;
   const limit = parseInt(searchParams.get("limit") || "5");
@@ -102,7 +103,8 @@ export async function GET(
         };
       })
       .filter(
-        (result): result is { article: any; score: number } => result !== null
+        (result): result is { article: IArticle; score: number } =>
+          result !== null
       )
       .slice(0, limit); // Limit to requested number
 

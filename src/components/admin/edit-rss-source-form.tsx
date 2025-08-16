@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Resolver, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ export function EditRssSourceForm({
 
   // Initialize react-hook-form with existing values
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema) as any,
+    resolver: zodResolver(formSchema) as unknown as Resolver<FormValues>,
     defaultValues: {
       name: source.name,
       url: source.url,
@@ -73,7 +73,7 @@ export function EditRssSourceForm({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id: source.id,
+          id: source._id,
           ...values,
         }),
       });

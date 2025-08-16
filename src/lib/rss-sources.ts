@@ -1,8 +1,9 @@
 import connectToDatabase from "./db/mongodb";
+import { Feed } from "@/models/Feed";
 
 // RSS Source interface
 export interface RssSource {
-  id?: string;
+  _id?: string;
   name: string;
   url: string;
   description?: string;
@@ -44,7 +45,6 @@ export async function getRssSources(): Promise<RssSource[]> {
     await connectToDatabase();
 
     // Import Feed model
-    const { Feed } = require("../models/Feed");
 
     // Get all sources
     let sources = await Feed.find({ active: true }).lean();
@@ -55,7 +55,7 @@ export async function getRssSources(): Promise<RssSource[]> {
       sources = await Feed.find({ active: true }).lean();
     }
 
-    return sources;
+    return sources as unknown as RssSource[];
   } catch (error) {
     console.error("Error getting RSS sources:", error);
     return [];
@@ -70,8 +70,7 @@ async function initializeDefaultSources() {
     // Connect to MongoDB
     await connectToDatabase();
 
-    // Import Feed model
-    const { Feed } = require("../models/Feed");
+    // Feed model is imported at the top
 
     // Create default sources
     for (const source of DEFAULT_SOURCES) {
@@ -95,8 +94,7 @@ export async function addRssSource(source: RssSource): Promise<RssSource> {
     // Connect to MongoDB
     await connectToDatabase();
 
-    // Import Feed model
-    const { Feed } = require("../models/Feed");
+    // Feed model is imported at the top
 
     // Check if source already exists
     const exists = await Feed.findOne({ url: source.url });
@@ -130,8 +128,7 @@ export async function updateRssSource(
     // Connect to MongoDB
     await connectToDatabase();
 
-    // Import Feed model
-    const { Feed } = require("../models/Feed");
+    // Feed model is imported at the top
 
     // Find and update source
     const feed = await Feed.findByIdAndUpdate(
@@ -159,8 +156,7 @@ export async function deleteRssSource(id: string): Promise<boolean> {
     // Connect to MongoDB
     await connectToDatabase();
 
-    // Import Feed model
-    const { Feed } = require("../models/Feed");
+    // Feed model is imported at the top
 
     // Delete source
     const result = await Feed.findByIdAndDelete(id);

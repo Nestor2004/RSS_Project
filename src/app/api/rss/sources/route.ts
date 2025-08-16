@@ -6,6 +6,7 @@ import {
   deleteRssSource as deleteSource,
 } from "@/lib/rss-sources";
 import { ApiResponse } from "@/types";
+import { Feed } from "@/models/Feed";
 
 // GET /api/rss/sources - get all sources
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -15,8 +16,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     // If ID is provided, get a specific source
     if (id) {
-      // Connect to MongoDB
-      const { Feed } = require("@/models/Feed");
+      // Feed model is imported at the top
       const source = await Feed.findById(id).lean();
 
       if (!source) {
@@ -155,8 +155,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
 
     // Check for reset command
     if (id === "reset") {
-      // Connect to MongoDB
-      const { Feed } = require("@/models/Feed");
+      // Feed model is imported at the top
 
       // Delete all existing sources
       await Feed.deleteMany({});

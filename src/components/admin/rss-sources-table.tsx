@@ -44,7 +44,6 @@ import {
   Trash2,
   RefreshCw,
   Check,
-  X,
   AlertCircle,
 } from "lucide-react";
 
@@ -71,7 +70,7 @@ export function RssSourcesTable({
   // Test an RSS feed
   const testRssFeed = async (source: RssSource) => {
     try {
-      setTestingSource(source.id || null);
+      setTestingSource(source._id || null);
       setTestResult(null);
 
       // Create a temporary fetch request to test the feed
@@ -81,7 +80,7 @@ export function RssSourcesTable({
       const data = await response.json();
 
       setTestResult({
-        id: source.id || "",
+        id: source._id || "",
         success: data.success,
         message: data.success
           ? `Successfully parsed feed: ${data.data.title || "Untitled"} (${
@@ -91,7 +90,7 @@ export function RssSourcesTable({
       });
     } catch (error) {
       setTestResult({
-        id: source.id || "",
+        id: source._id || "",
         success: false,
         message: `Error testing feed: ${
           error instanceof Error ? error.message : "Unknown error"
@@ -105,9 +104,8 @@ export function RssSourcesTable({
   // Handle delete
   const handleDelete = async () => {
     if (!deleteSource) return;
-
     try {
-      const response = await fetch(`/api/rss/sources?id=${deleteSource.id}`, {
+      const response = await fetch(`/api/rss/sources?id=${deleteSource._id}`, {
         method: "DELETE",
       });
 
@@ -241,8 +239,8 @@ export function RssSourcesTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will delete the RSS source "{deleteSource?.name}". This
-              action cannot be undone.
+              This will delete the RSS source &quot;{deleteSource?.name}&quot;.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

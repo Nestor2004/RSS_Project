@@ -35,7 +35,7 @@ function parseMongoURI(uri: string) {
   }
 }
 
-let cached: {
+const cached: {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
 } = { conn: null, promise: null };

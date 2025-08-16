@@ -1,7 +1,7 @@
-import { Collection } from "chromadb";
-import { pipeline, env } from "@xenova/transformers";
+import { Collection, Metadata, QueryResult } from "chromadb";
+import { pipeline, env, FeatureExtractionPipeline } from "@xenova/transformers";
 import connectToDatabase from "@/lib/db/mongodb";
-import { Article } from "@/models/Article";
+import { Article, IArticle } from "@/models/Article";
 import { getEnv } from "@/lib/env";
 import axios from "axios";
 
@@ -30,7 +30,7 @@ const DEFAULT_CONFIG: VectorSearchConfig = {
 export interface VectorSearchResult {
   id: string;
   score: number;
-  document: any;
+  document: IArticle & { _id: { toString(): string } };
   vector?: number[];
 }
 
@@ -39,7 +39,7 @@ export interface VectorSearchResult {
  */
 export class VectorSearch {
   private collection: Collection;
-  private embeddingModel: any;
+  private embeddingModel: FeatureExtractionPipeline | null = null;
   private modelName: string = "Xenova/all-MiniLM-L6-v2";
   private embeddingDimension: number = 384;
   private isInitialized: boolean = false;
@@ -142,6 +142,9 @@ export class VectorSearch {
       }
 
       // Generate embedding using local model
+      if (!this.embeddingModel) {
+        throw new Error("Embedding model not initialized");
+      }
       const result = await this.embeddingModel(cleanedText, {
         pooling: "mean",
         normalize: true,
@@ -350,16 +353,16 @@ export class VectorSearch {
           distances:
             filteredResults.distances.length > 0
               ? [filteredResults.distances]
-              : undefined,
+              : ([] as (number | null)[][]),
           metadatas:
             filteredResults.metadatas.length > 0
               ? [filteredResults.metadatas]
-              : undefined,
+              : ([] as (Metadata | null)[][]),
           documents:
             filteredResults.documents.length > 0
               ? [filteredResults.documents]
-              : undefined,
-        },
+              : ([] as (string | null)[][]),
+        } as QueryResult<Metadata>,
         mergedConfig
       );
 
@@ -374,7 +377,7 @@ export class VectorSearch {
    * Process search results from ChromaDB
    */
   private async processSearchResults(
-    searchResults: any,
+    searchResults: QueryResult<Metadata>,
     config: VectorSearchConfig
   ): Promise<VectorSearchResult[]> {
     // Connect to MongoDB
@@ -397,10 +400,12 @@ export class VectorSearch {
       .lean();
 
     // Map articles to results with scores
-    const results: VectorSearchResult[] = vectorIds
+    const results = vectorIds
       .map((vectorId: string, index: number) => {
         // Find the article with this vector ID
-        const article = articles.find((a: any) => a.vectorId === vectorId);
+        const article = articles.find((a) => a.vectorId === vectorId) as
+          | (IArticle & { _id: { toString(): string } })
+          | undefined;
 
         if (!article) return null;
 
@@ -433,6 +438,9 @@ export class VectorSearch {
         // Apply source filter if specified
         if (
           config.filters?.source &&
+          article.feed &&
+          typeof article.feed !== "string" &&
+          article.feed._id &&
           article.feed._id.toString() !== config.filters.source
         ) {
           return null;
@@ -448,10 +456,12 @@ export class VectorSearch {
         }
 
         return {
-          id: (article as any)._id.toString(),
+          id: article._id.toString(),
           score,
           document: article,
-          vector: config.includeVectors ? (article as any).vector : undefined,
+          vector: config.includeVectors
+            ? (article as unknown as { vector: number[] }).vector
+            : undefined,
         };
       })
       .filter(Boolean) as VectorSearchResult[];
@@ -467,11 +477,11 @@ export class VectorSearch {
    * Check if an article is a potential duplicate
    */
   async checkDuplicate(
-    article: any,
+    article: Partial<IArticle>,
     threshold: number = 0.98
   ): Promise<{
     isDuplicate: boolean;
-    similarArticle?: any;
+    similarArticle?: IArticle & { _id: { toString(): string } };
     similarityScore?: number;
   }> {
     try {
@@ -521,7 +531,9 @@ export class VectorSearch {
 
       // If similarity is above threshold, consider it a duplicate
       if (similarity >= threshold) {
-        const similarArticle = await Article.findOne({ vectorId }).lean();
+        const similarArticle = (await Article.findOne({ vectorId }).lean()) as
+          | (IArticle & { _id: { toString(): string } })
+          | null;
 
         if (similarArticle) {
           return {

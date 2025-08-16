@@ -8,10 +8,10 @@ import { ApiResponse } from "@/types";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Connect to the database
     await connectToDatabase();

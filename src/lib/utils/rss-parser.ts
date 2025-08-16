@@ -1,6 +1,29 @@
 import Parser from "rss-parser";
 import { RSSFeed, RSSItem, RSSParseResult } from "@/types";
 
+// Extended interface for RSS items with additional fields from the parser
+interface ExtendedRSSItem {
+  title: string;
+  description?: string;
+  content?: string;
+  "content:encoded"?: string;
+  contentSnippet?: string;
+  link: string;
+  guid: string;
+  pubDate?: string;
+  creator?: string;
+  author?: string;
+  dcCreator?: string;
+  dcDate?: string;
+  published?: string;
+  isoDate?: string;
+  categories?: string[];
+  enclosure?: {
+    url?: string;
+    type?: string;
+  };
+}
+
 // Configure the parser with the most essential custom fields
 // Using a simpler configuration to avoid TypeScript errors
 const parser = new Parser({
@@ -48,8 +71,8 @@ export async function fetchRssFeed(url: string): Promise<RSSFeed> {
     const feed = await parser.parseURL(url);
 
     const items: RSSItem[] = feed.items.map((item) => {
-      // Use type assertion to simplify handling of custom fields
-      const typedItem = item as any;
+      // Cast to our extended interface that includes additional RSS fields
+      const typedItem = item as ExtendedRSSItem;
 
       // Extract all possible content fields
       const contentRaw =
@@ -63,7 +86,7 @@ export async function fetchRssFeed(url: string): Promise<RSSFeed> {
         typedItem.creator ||
         typedItem.author ||
         typedItem.dcCreator ||
-        (feed as any).creator ||
+        (feed as unknown as { creator?: string }).creator ||
         "";
 
       // Get publish date from all possible fields
@@ -87,7 +110,7 @@ export async function fetchRssFeed(url: string): Promise<RSSFeed> {
         pubDate: normalizeDate(pubDateRaw),
         author,
         categories: typedItem.categories || [],
-        media: typedItem.media || typedItem.enclosure,
+        media: typedItem.enclosure,
       };
     });
 

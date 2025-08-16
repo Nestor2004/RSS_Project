@@ -3,13 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -31,7 +24,7 @@ interface Source {
 export function NewsFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [sources, setSources] = useState<Source[]>([]);
+  const [, setSources] = useState<Source[]>([]);
 
   const currentSource = searchParams.get("source") || "";
   const dateFrom = searchParams.get("dateFrom") || "";
@@ -83,11 +76,6 @@ export function NewsFilters() {
     const query = search ? `?${search}` : "";
 
     router.push(`/news${query}`);
-  };
-
-  // Handle source selection
-  const handleSourceChange = (value: string) => {
-    applyFilters(value, dateFrom, dateTo);
   };
 
   // Reset all filters

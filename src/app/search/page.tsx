@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BarChart3, Search as SearchIcon, History, Trash2 } from "lucide-react";
 import { AdvancedSearchForm } from "@/components/search/advanced-search-form";
@@ -17,22 +17,23 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import { SearchResult as ApiSearchResult } from "@/types";
 
 interface SearchHistoryItem {
   id: string;
   query: string;
   timestamp: string;
   resultCount: number;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
   // State
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<ApiSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [activeTab, setActiveTab] = useState("results");
@@ -72,67 +73,75 @@ export default function SearchPage() {
   }, [query, source, category, dateFrom, dateTo, minSimilarity]);
 
   // Perform search
-  const performSearch = async (searchQuery: string, filters: any = {}) => {
-    if (!searchQuery.trim()) return;
+  const performSearch = useCallback(
+    async (searchQuery: string, filters: Record<string, unknown> = {}) => {
+      if (!searchQuery.trim()) return;
 
-    setIsLoading(true);
-    setActiveTab("results");
+      setIsLoading(true);
+      setActiveTab("results");
 
-    try {
-      // Build URL parameters
-      const params = new URLSearchParams();
-      params.set("q", searchQuery);
+      try {
+        // Build URL parameters
+        const params = new URLSearchParams();
+        params.set("q", searchQuery);
 
-      if (filters.source) params.set("source", filters.source);
-      if (filters.category) params.set("category", filters.category);
-      if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
-      if (filters.dateTo) params.set("dateTo", filters.dateTo);
-      if (filters.minSimilarity)
-        params.set("minSimilarity", filters.minSimilarity.toString());
+        if (filters.source) params.set("source", filters.source as string);
+        if (filters.category)
+          params.set("category", filters.category as string);
+        if (filters.dateFrom)
+          params.set("dateFrom", filters.dateFrom as string);
+        if (filters.dateTo) params.set("dateTo", filters.dateTo as string);
+        if (filters.minSimilarity)
+          params.set("minSimilarity", filters.minSimilarity.toString());
 
-      // Update URL
-      router.push(`/search?${params.toString()}`);
+        // Update URL
+        router.push(`/search?${params.toString()}`);
 
-      // Make API request
-      const response = await fetch(`/api/search/query?${params.toString()}`);
-      const data = await response.json();
+        // Make API request
+        const response = await fetch(`/api/search/query?${params.toString()}`);
+        const data = await response.json();
 
-      if (data.success) {
-        setResults(data.data.results);
+        if (data.success) {
+          setResults(data.data.results);
 
-        // Add to search history
-        const historyItem: SearchHistoryItem = {
-          id: Date.now().toString(),
-          query: searchQuery,
-          timestamp: new Date().toISOString(),
-          resultCount: data.data.results.length,
-          filters: filters,
-        };
+          // Add to search history
+          const historyItem: SearchHistoryItem = {
+            id: Date.now().toString(),
+            query: searchQuery,
+            timestamp: new Date().toISOString(),
+            resultCount: data.data.results.length,
+            filters: filters,
+          };
 
-        const updatedHistory = [historyItem, ...searchHistory.slice(0, 9)];
-        setSearchHistory(updatedHistory);
-        localStorage.setItem("searchHistory", JSON.stringify(updatedHistory));
-      } else {
+          const updatedHistory = [historyItem, ...searchHistory.slice(0, 9)];
+          setSearchHistory(updatedHistory);
+          localStorage.setItem("searchHistory", JSON.stringify(updatedHistory));
+        } else {
+          toast({
+            title: "Search Error",
+            description: data.error?.message || "Failed to perform search",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error performing search:", error);
         toast({
           title: "Search Error",
-          description: data.error?.message || "Failed to perform search",
+          description: "An unexpected error occurred while searching",
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error performing search:", error);
-      toast({
-        title: "Search Error",
-        description: "An unexpected error occurred while searching",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [setIsLoading, setActiveTab, setResults, setSearchHistory, router, toast]
+  );
 
   // Handle search from form
-  const handleSearch = (searchQuery: string, filters: any = {}) => {
+  const handleSearch = (
+    searchQuery: string,
+    filters: Record<string, unknown> = {}
+  ) => {
     performSearch(searchQuery, filters);
   };
 
@@ -150,11 +159,6 @@ export default function SearchPage() {
       title: "Search History Cleared",
       description: "Your search history has been cleared",
     });
-  };
-
-  // Use history item
-  const useHistoryItem = (item: SearchHistoryItem) => {
-    performSearch(item.query, item.filters);
   };
 
   return (
@@ -179,7 +183,9 @@ export default function SearchPage() {
         {query && (
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-              <h2 className="text-xl font-semibold">Results for "{query}"</h2>
+              <h2 className="text-xl font-semibold">
+                Results for &quot;{query}&quot;
+              </h2>
               <p className="text-sm text-muted-foreground">
                 Found {results.length} articles with vector similarity
               </p>
@@ -243,7 +249,32 @@ export default function SearchPage() {
               <TabsContent value="results">
                 {query ? (
                   <SearchResults
-                    results={results}
+                    results={results.map((r) => ({
+                      id: r.id,
+                      score: r.score,
+                      document: {
+                        _id: r.document._id as string,
+                        title: r.document.title || "",
+                        description: r.document.description || "",
+                        content: r.document.content || "",
+                        link: r.document.link || "",
+                        guid: r.document.guid || "",
+                        pubDate: r.document.pubDate?.toString() || "",
+                        author: r.document.author || "",
+                        feed: {
+                          _id:
+                            (r.document.feed as unknown as { _id: string })
+                              ._id || "",
+                          title:
+                            (r.document.feed as unknown as { title: string })
+                              .title || "",
+                          url:
+                            (r.document.feed as unknown as { url: string })
+                              .url || "",
+                        },
+                        categories: r.document.categories || [],
+                      },
+                    }))}
                     isLoading={isLoading}
                     query={query}
                     onReset={resetSearch}
@@ -303,12 +334,12 @@ export default function SearchPage() {
                                 <span className="text-xs text-muted-foreground">
                                   {item.resultCount} results
                                 </span>
-                                {item.filters?.source && (
+                                {typeof item.filters?.source === "string" && (
                                   <span className="text-xs bg-muted px-1.5 rounded">
                                     Source: {item.filters.source}
                                   </span>
                                 )}
-                                {item.filters?.category && (
+                                {typeof item.filters?.category === "string" && (
                                   <span className="text-xs bg-muted px-1.5 rounded">
                                     Category: {item.filters.category}
                                   </span>
@@ -318,7 +349,10 @@ export default function SearchPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => useHistoryItem(item)}
+                              onClick={() => {
+                                // Use history item directly instead of calling the hook
+                                performSearch(item.query, item.filters);
+                              }}
                             >
                               <History className="h-4 w-4 mr-1" />
                               Search Again
@@ -469,5 +503,13 @@ export default function SearchPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading search...</div>}>
+      <SearchContent />
+    </Suspense>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Search, Home, ArrowRight } from "lucide-react";
+import { Home, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search/search-bar";
 
@@ -20,7 +20,8 @@ export default function NotFound() {
             404 - Page Not Found
           </h1>
           <p className="text-xl text-muted-foreground">
-            The page you're looking for doesn't exist or has been moved.
+            The page you&apos;re looking for doesn&apos;t exist or has been
+            moved.
           </p>
         </div>
 
@@ -29,12 +30,13 @@ export default function NotFound() {
 
           <div className="flex flex-col items-center gap-2">
             <p className="text-sm text-muted-foreground">
-              Try searching for what you're looking for:
+              Try searching for what you&apos;re looking for:
             </p>
             <SearchBar
               placeholder="Search articles..."
               className="w-full"
               showTrending={false}
+              onSearch={() => {}}
             />
           </div>
 

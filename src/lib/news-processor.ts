@@ -1,9 +1,11 @@
 import { parseRSSFeed } from "./rss-parser";
-import { getRssSources } from "./rss-sources";
+import { getRssSources, RssSource } from "./rss-sources";
 import connectToDatabase from "./db/mongodb";
 import { getCollection } from "./db/chromadb";
 import { Article } from "../models/Article";
+import { Feed, IFeed } from "../models/Feed";
 import { VectorSearch } from "./vector-search";
+import mongoose from "mongoose";
 
 // Processing statistics
 export interface ProcessingStats {
@@ -73,7 +75,7 @@ export async function processAllFeeds(): Promise<ProcessingStats> {
         }
 
         // Find or create feed in database
-        let feedRecord = await findOrCreateFeed(source);
+        const feedRecord = await findOrCreateFeed(source);
 
         // Process each item in the feed
         for (const item of feedData.items) {
@@ -84,13 +86,13 @@ export async function processAllFeeds(): Promise<ProcessingStats> {
             const articleData = {
               title: item.title || "",
               description: item.contentSnippet || "",
-              content: item.content || "",
+              content: (item.content as string) || "",
               link: item.link || "",
               guid: item.guid || item.link || "",
-              pubDate: item.isoDate || new Date().toISOString(),
-              author: item.creator || "",
+              pubDate: new Date(item.isoDate || new Date().toISOString()),
+              author: (item.creator as string) || "",
               categories: item.categories || [],
-              feed: feedRecord._id,
+              feed: feedRecord._id as mongoose.Types.ObjectId,
             };
 
             // Check for duplicates
@@ -122,7 +124,7 @@ export async function processAllFeeds(): Promise<ProcessingStats> {
                   {
                     title: articleData.title || "",
                     source: source.name || "unknown",
-                    pubDate: articleData.pubDate,
+                    pubDate: articleData.pubDate.toISOString(),
                     link: articleData.link,
                   },
                 ],
@@ -190,12 +192,11 @@ export async function processAllFeeds(): Promise<ProcessingStats> {
 /**
  * Find or create feed in database
  */
-async function findOrCreateFeed(source: any) {
+async function findOrCreateFeed(source: RssSource): Promise<IFeed> {
   // Connect to MongoDB
   await connectToDatabase();
 
-  // Import Feed model
-  const { Feed } = require("../models/Feed");
+  // Feed model is imported at the top
 
   // Find existing feed
   let feed = await Feed.findOne({ url: source.url });
